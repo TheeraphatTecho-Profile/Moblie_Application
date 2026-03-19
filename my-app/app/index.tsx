@@ -6,22 +6,6 @@ import { Link } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, View, ScrollView, Image, StyleSheet, ActivityIndicator } from "react-native";
 
-// 🌷 ธีมสี: Soft Pastel - Card โดดเด่นขึ้น
-const COLORS = {
-  background: "#E8E0E8",    // Lavender Grey (เข้มขึ้น ทำให้ card โดดเด่น)
-  cardBg: "#FFFFFF",        // White card
-  cardBorder: "#D4C0D0",    // Dusty Rose Border (เข้มขึ้น)
-  purple: "#9A8BB0",        // Soft Lavender
-  purpleLight: "#D4C9E0",
-  blue: "#7BA3BD",          // Dusty Blue
-  blueLight: "#C5DAE8",
-  pink: "#C08888",          // Dusty Rose
-  pinkLight: "#E8C5C5",
-  textPrimary: "#2D2836",   // Dark Purple Grey (เข้มมาก อ่านชัด)
-  textSecondary: "#4A4453", // Medium Grey
-  textMuted: "#5A5263",     // Muted (เข้มขึ้นอีก)
-};
-
 // Interface สำหรับข้อมูล Pokemon
 interface Pokemon {
   name: string;
@@ -38,26 +22,26 @@ interface PokemonType {
   };
 }
 
-// สีของแต่ละ Type โปเกม่อน - Soft Muted Version
+// สีของแต่ละ Type โปเกม่อน
 const colorsByType: Record<string, string> = {
-  normal: "#B8B8A0",
-  fire: "#E8A87C",
-  water: "#8CB5D9",
-  electric: "#E8D08C",
-  grass: "#9BC78C",
-  ice: "#A8D4D0",
-  fighting: "#C87C7C",
-  poison: "#B088B0",
-  ground: "#D8C8A0",
-  flying: "#B8A8D8",
-  psychic: "#E89CAB",
-  bug: "#B0C080",
-  rock: "#C0B080",
-  ghost: "#9088A8",
-  dragon: "#9C88D0",
-  dark: "#887868",
-  steel: "#B8B8C8",
-  fairy: "#D0A8B8",
+  normal: "#A8A77A",
+  fire: "#EE8130",
+  water: "#6390F0",
+  electric: "#F7D02C",
+  grass: "#7AC74C",
+  ice: "#96D9D6",
+  fighting: "#C22E28",
+  poison: "#A33EA1",
+  ground: "#E2BF65",
+  flying: "#A98FF3",
+  psychic: "#F95587",
+  bug: "#A6B91A",
+  rock: "#B6A136",
+  ghost: "#735797",
+  dragon: "#6F35FC",
+  dark: "#705746",
+  steel: "#B7B7CE",
+  fairy: "#D685AD",
 };
 
 export default function Index() {
@@ -109,8 +93,8 @@ export default function Index() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.pink} />
-        <Text style={styles.loadingText}>🌸 Loading Pokémon...</Text>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={styles.loadingText}>Loading Pokémon...</Text>
       </View>
     );
   }
@@ -119,8 +103,8 @@ export default function Index() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🌷 Pokédex</Text>
-        <Text style={styles.headerSubtitle}>Tap to see details ✨</Text>
+        <Text style={styles.headerTitle}>🎮 Pokédex</Text>
+        <Text style={styles.headerSubtitle}>Tap to see details</Text>
       </View>
 
       {/* Pokemon List */}
@@ -130,7 +114,7 @@ export default function Index() {
         showsVerticalScrollIndicator={false}
       >
         {pokemons.map((pokemon, index) => {
-          const primaryColor = colorsByType[pokemon.type[0].type.name] || COLORS.purple;
+          const primaryColor = colorsByType[pokemon.type[0].type.name] || "#6366F1";
 
           return (
             <Link
@@ -139,10 +123,8 @@ export default function Index() {
               style={[styles.card, { borderLeftColor: primaryColor }]}
             >
               <View style={styles.cardContent}>
-                {/* Pokemon Number - ย้ายไปซ้ายบน */}
-                <View style={styles.numberBadge}>
-                  <Text style={styles.pokemonNumber}>#{String(index + 1).padStart(3, '0')}</Text>
-                </View>
+                {/* Pokemon Number */}
+                <Text style={styles.pokemonNumber}>#{String(index + 1).padStart(3, '0')}</Text>
 
                 {/* Pokemon Info */}
                 <View style={styles.infoSection}>
@@ -153,7 +135,7 @@ export default function Index() {
                     {pokemon.type.map((t, idx) => (
                       <View
                         key={idx}
-                        style={[styles.typeChip, { backgroundColor: colorsByType[t.type.name] || COLORS.purple }]}
+                        style={[styles.typeChip, { backgroundColor: colorsByType[t.type.name] || "#888" }]}
                       >
                         <Text style={styles.typeText}>{formatName(t.type.name)}</Text>
                       </View>
@@ -181,44 +163,38 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#111827",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.background,
+    backgroundColor: "#111827",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: "#9CA3AF",
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: COLORS.cardBg,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    shadowColor: COLORS.pink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    backgroundColor: "#1F2937",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "bold",
-    color: COLORS.textPrimary,
+    color: "#F9FAFB",
     textAlign: "center",
   },
   headerSubtitle: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: "#9CA3AF",
     textAlign: "center",
-    marginTop: 6,
+    marginTop: 4,
   },
   scrollView: {
     flex: 1,
@@ -229,44 +205,32 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 18,
+    backgroundColor: "#1F2937",
+    borderRadius: 16,
     borderLeftWidth: 4,
     overflow: "hidden",
-    shadowColor: COLORS.pink,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
   },
   cardContent: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
   },
-  numberBadge: {
+  pokemonNumber: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "600",
     position: "absolute",
     top: 8,
-    left: 12,
-    backgroundColor: COLORS.purpleLight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  pokemonNumber: {
-    fontSize: 11,
-    color: COLORS.textPrimary,
-    fontWeight: "700",
+    right: 12,
   },
   infoSection: {
     flex: 1,
     paddingRight: 12,
-    paddingTop: 12,
   },
   pokemonName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: COLORS.textPrimary,
+    color: "#F9FAFB",
     marginBottom: 8,
   },
   typesContainer: {
@@ -276,8 +240,8 @@ const styles = StyleSheet.create({
   },
   typeChip: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   typeText: {
     fontSize: 11,
@@ -287,12 +251,9 @@ const styles = StyleSheet.create({
   imagesContainer: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.background,
-    borderRadius: 14,
-    padding: 8,
   },
   pokemonImage: {
-    width: 72,
-    height: 72,
+    width: 80,
+    height: 80,
   },
 });

@@ -10,6 +10,7 @@ interface PokemonData {
     height: number;
     base_experience: number;
     is_default: boolean;
+    location_area_encounters: string;
     abilities: {
         ability: {
             name: string;
@@ -20,10 +21,7 @@ interface PokemonData {
     }[];
     past_abilities: {
         abilities: {
-            ability: {
-                name: string;
-                url: string;
-            };
+            ability: { name: string; url: string } | null;
             is_hidden: boolean;
             slot: number;
         }[];
@@ -32,11 +30,40 @@ interface PokemonData {
             url: string;
         };
     }[];
+
+    held_items: {
+        item: {
+            name: string;
+            url: string;
+        };
+        version_details: {
+            rarity: number;
+            version: {
+                name: string;
+                url: string;
+            };
+        }[];
+    }[];
+
+    species: {
+        name: string;
+        url: string;
+    };
     sprites: {
         front_default: string | null;
         back_default: string | null;
         front_shiny: string | null;
         back_shiny: string | null;
+        other?: {
+            "official-artwork"?: {
+                front_default: string | null;
+                front_shiny: string | null;
+            };
+            home?: {
+                front_default: string | null;
+                front_shiny: string | null;
+            };
+        };
     };
     stats: {
         base_stat: number;
@@ -66,63 +93,9 @@ interface PokemonData {
             };
         }[];
     }[];
-    held_items: {
-        item: {
-            name: string;
-            url: string;
-        };
-        version_details: {
-            rarity: number;
-            version: {
-                name: string;
-                url: string;
-            };
-        }[];
-    }[];
-    species: {
-        name: string;
-        url: string;
-    };
 }
 
-// 🌷 ธีมสี: Soft Pastel - นุ่มนวล สบายตา (อ่านชัดขึ้น)
-const COLORS = {
-    // พื้นหลัก - Warm Cream (สบายตา ไม่แสบ)
-    background: "#FAF7F5",    // Warm Cream
-    cardBg: "#FFFFFF",
-    cardBorder: "#E8D5D5",    // Dusty Rose Border
-
-    // สีหลัก - Muted Soft Pastels
-    purple: "#9A8BB0",        // Soft Lavender (เข้มขึ้น)
-    purpleLight: "#D4C9E0",   // Light Lavender
-    purpleDark: "#7B6A8F",    // Dusty Lavender (เข้มขึ้น)
-
-    blue: "#7BA3BD",          // Dusty Blue (เข้มขึ้น)
-    blueLight: "#C5DAE8",     // Soft Sky
-    blueDark: "#5A8AA8",      // Muted Blue (เข้มขึ้น)
-
-    pink: "#C08888",          // Dusty Rose (เข้มขึ้น)
-    pinkLight: "#E8C5C5",     // Soft Blush
-    pinkDark: "#A06868",      // Muted Rose (เข้มขึ้น)
-
-    // สีเสริม - Muted Warm
-    peach: "#D4B8A0",         // Soft Peach (เข้มขึ้น)
-    mint: "#8FC0A8",          // Dusty Mint (เข้มขึ้น)
-    cream: "#F5EDE5",         // Warm Cream
-
-    // สีเพิ่มเติมสำหรับ Types
-    green: "#7EC89D",         // Soft Green
-    yellow: "#E8D47A",        // Soft Yellow
-    orange: "#E8A87A",        // Soft Orange
-
-    // ข้อความ - เข้มขึ้นมาก อ่านชัด
-    textPrimary: "#2D2836",   // Dark Purple Grey (เข้มมาก)
-    textSecondary: "#4A4453", // Medium Grey (เข้มขึ้น)
-    textMuted: "#6B6374",     // Muted Grey (เข้มขึ้น)
-};
-
-// สีสำหรับแต่ละ Type ของ Pokemon
-const TYPE_COLORS: { [key: string]: string } = {
+const typeColors: { [key: string]: string } = {
     normal: "#A8A878",
     fire: "#F08030",
     water: "#6890F0",
@@ -143,8 +116,7 @@ const TYPE_COLORS: { [key: string]: string } = {
     fairy: "#EE99AC",
 };
 
-// สีสำหรับ Stats
-const STAT_COLORS: { [key: string]: string } = {
+const statColors: { [key: string]: string } = {
     hp: "#FF5959",
     attack: "#F5AC78",
     defense: "#FAE078",
@@ -186,25 +158,13 @@ export default function Details() {
         return name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, " ");
     };
 
-    const formatStatName = (name: string) => {
-        const statNames: { [key: string]: string } = {
-            hp: "HP",
-            attack: "Attack",
-            defense: "Defense",
-            "special-attack": "Sp. Atk",
-            "special-defense": "Sp. Def",
-            speed: "Speed",
-        };
-        return statNames[name] || formatName(name);
-    };
-
     if (loading) {
         return (
             <>
                 <Stack.Screen options={{ title: formatName(params.name as string || "Loading...") }} />
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={COLORS.purple} />
-                    <Text style={styles.loadingText}>✨ Loading...</Text>
+                    <ActivityIndicator size="large" color="#6366F1" />
+                    <Text style={styles.loadingText}>Loading...</Text>
                 </View>
             </>
         );
@@ -215,7 +175,7 @@ export default function Details() {
             <>
                 <Stack.Screen options={{ title: "Error" }} />
                 <View style={styles.errorContainer}>
-                    <Text style={styles.errorEmoji}>💔</Text>
+                    <Text style={styles.errorEmoji}>😢</Text>
                     <Text style={styles.errorText}>{error || "Pokemon not found"}</Text>
                 </View>
             </>
@@ -227,35 +187,29 @@ export default function Details() {
             <Stack.Screen
                 options={{
                     title: formatName(pokemon.name),
-                    headerStyle: { backgroundColor: COLORS.cardBg },
-                    headerTintColor: COLORS.textPrimary,
+                    headerStyle: { backgroundColor: "#1F2937" },
+                    headerTintColor: "#F9FAFB",
                 }}
             />
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
                 {/* Pokemon Name & ID Header */}
                 <View style={styles.headerCard}>
-                    <Text style={styles.pokemonId}>#{String(pokemon.id).padStart(4, '0')}</Text>
+                    <Text style={styles.pokemonId}>#{pokemon.id.toString().padStart(4, '0')}</Text>
                     <Text style={styles.pokemonName}>{formatName(pokemon.name)}</Text>
-                    <View style={styles.dividerContainer}>
-                        <View style={[styles.dividerSegment, { backgroundColor: COLORS.purple }]} />
-                        <View style={[styles.dividerSegment, { backgroundColor: COLORS.blue }]} />
-                        <View style={[styles.dividerSegment, { backgroundColor: COLORS.pink }]} />
-                    </View>
+                    {pokemon.is_default && <Text style={styles.defaultBadge}>Default Form</Text>}
+                    <View style={styles.divider} />
                 </View>
 
                 {/* Types Section */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionIcon}>🏷️</Text>
-                        <Text style={styles.sectionTitle}>Types</Text>
-                    </View>
-                    <View style={styles.typesRow}>
+                    <Text style={styles.sectionTitle}>🏷️ Types</Text>
+                    <View style={styles.typesContainer}>
                         {pokemon.types.map((typeData, index) => (
                             <View
                                 key={index}
                                 style={[
                                     styles.typeChip,
-                                    { backgroundColor: TYPE_COLORS[typeData.type.name] || COLORS.purple }
+                                    { backgroundColor: typeColors[typeData.type.name] || "#777" }
                                 ]}
                             >
                                 <Text style={styles.typeText}>{formatName(typeData.type.name)}</Text>
@@ -264,17 +218,26 @@ export default function Details() {
                     </View>
                 </View>
 
+                {/* Official Artwork */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>🎨 Official Artwork</Text>
+                    <View style={styles.artworkContainer}>
+                        {pokemon.sprites.other?.["official-artwork"]?.front_default && (
+                            <Image
+                                source={{ uri: pokemon.sprites.other["official-artwork"].front_default }}
+                                style={styles.artworkImage}
+                                resizeMode="contain"
+                            />
+                        )}
+                    </View>
+                </View>
+
                 {/* Sprites Section */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionIcon}>🎨</Text>
-                        <Text style={styles.sectionTitle}>Sprites</Text>
-                    </View>
-
-                    {/* Normal Sprites */}
+                    <Text style={styles.sectionTitle}>✨ Sprites</Text>
                     <Text style={styles.subSectionTitle}>Normal</Text>
                     <View style={styles.spriteRow}>
-                        <View style={[styles.spriteCard, styles.normalCard]}>
+                        <View style={styles.spriteCard}>
                             <Image
                                 source={{ uri: pokemon.sprites.front_default || "" }}
                                 style={styles.spriteImage}
@@ -282,7 +245,7 @@ export default function Details() {
                             />
                             <Text style={styles.spriteLabel}>Front</Text>
                         </View>
-                        <View style={[styles.spriteCard, styles.normalCard]}>
+                        <View style={styles.spriteCard}>
                             <Image
                                 source={{ uri: pokemon.sprites.back_default || "" }}
                                 style={styles.spriteImage}
@@ -291,9 +254,7 @@ export default function Details() {
                             <Text style={styles.spriteLabel}>Back</Text>
                         </View>
                     </View>
-
-                    {/* Shiny Sprites */}
-                    <Text style={styles.subSectionTitle}>✨ Shiny</Text>
+                    <Text style={styles.subSectionTitle}>⭐ Shiny</Text>
                     <View style={styles.spriteRow}>
                         <View style={[styles.spriteCard, styles.shinyCard]}>
                             <Image
@@ -314,144 +275,144 @@ export default function Details() {
                     </View>
                 </View>
 
-                {/* Base Info Section */}
+                {/* Basic Info Section */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionIcon}>📋</Text>
-                        <Text style={styles.sectionTitle}>Basic Info</Text>
-                    </View>
+                    <Text style={styles.sectionTitle}>📊 Basic Info</Text>
                     <View style={styles.infoGrid}>
-                        <View style={[styles.infoCard, styles.weightCard]}>
+                        <View style={styles.infoCard}>
                             <Text style={styles.infoIcon}>⚖️</Text>
-                            <Text style={[styles.infoValue, { color: COLORS.blue }]}>
-                                {(pokemon.weight / 10).toFixed(1)} kg
-                            </Text>
+                            <Text style={styles.infoValue}>{(pokemon.weight / 10).toFixed(1)} kg</Text>
                             <Text style={styles.infoLabel}>Weight</Text>
                         </View>
-                        <View style={[styles.infoCard, styles.heightCard]}>
+                        <View style={styles.infoCard}>
                             <Text style={styles.infoIcon}>📏</Text>
-                            <Text style={[styles.infoValue, { color: COLORS.purple }]}>
-                                {(pokemon.height / 10).toFixed(1)} m
-                            </Text>
+                            <Text style={styles.infoValue}>{(pokemon.height / 10).toFixed(1)} m</Text>
                             <Text style={styles.infoLabel}>Height</Text>
                         </View>
-                    </View>
-                    <View style={styles.infoGrid}>
-                        <View style={[styles.infoCard, styles.expCard]}>
+                        <View style={styles.infoCard}>
                             <Text style={styles.infoIcon}>⭐</Text>
-                            <Text style={[styles.infoValue, { color: COLORS.orange }]}>
-                                {pokemon.base_experience || "N/A"}
-                            </Text>
-                            <Text style={styles.infoLabel}>Base Exp</Text>
+                            <Text style={styles.infoValue}>{pokemon.base_experience || "N/A"}</Text>
+                            <Text style={styles.infoLabel}>Base EXP</Text>
                         </View>
-                        <View style={[styles.infoCard, styles.orderCard]}>
-                            <Text style={styles.infoIcon}>📊</Text>
-                            <Text style={[styles.infoValue, { color: COLORS.mint }]}>
-                                #{pokemon.order}
-                            </Text>
+                        <View style={styles.infoCard}>
+                            <Text style={styles.infoIcon}>📋</Text>
+                            <Text style={styles.infoValue}>#{pokemon.order}</Text>
                             <Text style={styles.infoLabel}>Order</Text>
-                        </View>
-                    </View>
-                    {/* Is Default */}
-                    <View style={styles.defaultInfoRow}>
-                        <Text style={styles.defaultLabel}>🎯 Is Default Form:</Text>
-                        <View style={[styles.defaultBadge, pokemon.is_default ? styles.yesDefault : styles.noDefault]}>
-                            <Text style={styles.defaultBadgeText}>
-                                {pokemon.is_default ? "Yes" : "No"}
-                            </Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Stats Section */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionIcon}>📈</Text>
-                        <Text style={styles.sectionTitle}>Base Stats</Text>
-                    </View>
-                    <View style={styles.statsContainer}>
-                        {pokemon.stats.map((statData, index) => (
-                            <View key={index} style={styles.statRow}>
-                                <Text style={styles.statName}>{formatStatName(statData.stat.name)}</Text>
-                                <Text style={styles.statValue}>{statData.base_stat}</Text>
-                                <View style={styles.statBarContainer}>
-                                    <View
-                                        style={[
-                                            styles.statBar,
-                                            {
-                                                width: `${Math.min(100, (statData.base_stat / 255) * 100)}%`,
-                                                backgroundColor: STAT_COLORS[statData.stat.name] || COLORS.blue
-                                            }
-                                        ]}
-                                    />
-                                </View>
+                    <Text style={styles.sectionTitle}>📈 Base Stats</Text>
+                    {pokemon.stats.map((statData, index) => (
+                        <View key={index} style={styles.statRow}>
+                            <Text style={styles.statName}>{formatName(statData.stat.name)}</Text>
+                            <Text style={styles.statValue}>{statData.base_stat}</Text>
+                            <View style={styles.statBarContainer}>
+                                <View
+                                    style={[
+                                        styles.statBar,
+                                        {
+                                            width: `${Math.min((statData.base_stat / 255) * 100, 100)}%`,
+                                            backgroundColor: statColors[statData.stat.name] || "#6366F1"
+                                        }
+                                    ]}
+                                />
                             </View>
-                        ))}
-                        <View style={styles.totalStatRow}>
-                            <Text style={styles.totalStatLabel}>Total</Text>
-                            <Text style={styles.totalStatValue}>
-                                {pokemon.stats.reduce((sum, stat) => sum + stat.base_stat, 0)}
-                            </Text>
                         </View>
-                    </View>
+                    ))}
                 </View>
 
                 {/* Abilities Section */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionIcon}>⚡</Text>
-                        <Text style={styles.sectionTitle}>Abilities</Text>
-                    </View>
+                    <Text style={styles.sectionTitle}>⚡ Abilities</Text>
                     <View style={styles.abilitiesContainer}>
                         {pokemon.abilities.map((abilityData, index) => (
                             <View
                                 key={index}
                                 style={[
                                     styles.abilityChip,
-                                    abilityData.is_hidden ? styles.hiddenAbilityChip : styles.normalAbilityChip
+                                    abilityData.is_hidden && styles.hiddenAbilityChip
                                 ]}
                             >
-                                <View style={styles.abilityInfo}>
-                                    <View style={[
-                                        styles.abilityDot,
-                                        { backgroundColor: abilityData.is_hidden ? COLORS.pink : COLORS.blue }
-                                    ]} />
+                                <View>
                                     <Text style={[
                                         styles.abilityText,
                                         abilityData.is_hidden && styles.hiddenAbilityText
                                     ]}>
                                         {formatName(abilityData.ability.name)}
                                     </Text>
+                                    <Text style={styles.abilitySlot}>Slot {abilityData.slot}</Text>
                                 </View>
                                 {abilityData.is_hidden && (
-                                    <View style={styles.hiddenBadge}>
-                                        <Text style={styles.hiddenBadgeText}>Hidden</Text>
-                                    </View>
+                                    <Text style={styles.hiddenBadge}>Hidden</Text>
                                 )}
                             </View>
                         ))}
                     </View>
                 </View>
 
-                {/* Past Types Section */}
-                {pokemon.past_types && pokemon.past_types.length > 0 && (
+                {/* Past Abilities Section */}
+                {pokemon.past_abilities.length > 0 && (
                     <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionIcon}>🕰️</Text>
-                            <Text style={styles.sectionTitle}>Past Types</Text>
-                        </View>
-                        {pokemon.past_types.map((pastData, genIndex) => (
-                            <View key={genIndex} style={styles.pastContainer}>
-                                <Text style={styles.generationTitle}>
-                                    🎮 {formatName(pastData.generation.name)}
+                        <Text style={styles.sectionTitle}>📜 Past Abilities</Text>
+                        {pokemon.past_abilities.map((pastAbility, index) => (
+                            <View key={index} style={styles.pastAbilityCard}>
+                                <Text style={styles.generationText}>
+                                    {formatName(pastAbility.generation.name)}
                                 </Text>
-                                <View style={styles.typesRow}>
-                                    {pastData.types.map((typeData, index) => (
+                                {pastAbility.abilities.map((ability, aIndex) => (
+                                    <Text key={aIndex} style={styles.pastAbilityText}>
+                                        Slot {ability.slot}: {ability.ability?.name ? formatName(ability.ability.name) : "None"}
+                                        {ability.is_hidden && " (Hidden)"}
+                                    </Text>
+                                ))}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* Species Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>🧬 Species</Text>
+                    <View style={styles.speciesCard}>
+                        <Text style={styles.speciesName}>{formatName(pokemon.species.name)}</Text>
+                    </View>
+                </View>
+
+                {/* Held Items Section */}
+                {pokemon.held_items.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>🎒 Held Items</Text>
+                        {pokemon.held_items.map((heldItem, index) => (
+                            <View key={index} style={styles.heldItemCard}>
+                                <Text style={styles.heldItemName}>{formatName(heldItem.item.name)}</Text>
+                                <Text style={styles.heldItemRarity}>
+                                    Found in: {heldItem.version_details.slice(0, 3).map(v => formatName(v.version.name)).join(", ")}
+                                    {heldItem.version_details.length > 3 && ` +${heldItem.version_details.length - 3} more`}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* Past Types Section */}
+                {pokemon.past_types.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>📜 Past Types</Text>
+                        {pokemon.past_types.map((pastType, index) => (
+                            <View key={index} style={styles.pastTypeCard}>
+                                <Text style={styles.generationText}>
+                                    {formatName(pastType.generation.name)}
+                                </Text>
+                                <View style={styles.typesContainer}>
+                                    {pastType.types.map((typeData, tIndex) => (
                                         <View
-                                            key={index}
+                                            key={tIndex}
                                             style={[
                                                 styles.typeChip,
-                                                { backgroundColor: TYPE_COLORS[typeData.type.name] || COLORS.purple }
+                                                { backgroundColor: typeColors[typeData.type.name] || "#777" }
                                             ]}
                                         >
                                             <Text style={styles.typeText}>{formatName(typeData.type.name)}</Text>
@@ -462,19 +423,6 @@ export default function Details() {
                         ))}
                     </View>
                 )}
-
-                {/* Species Section */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionIcon}>🧬</Text>
-                        <Text style={styles.sectionTitle}>Species</Text>
-                    </View>
-                    <View style={styles.speciesCard}>
-                        <Text style={styles.speciesName}>{formatName(pokemon.species.name)}</Text>
-                    </View>
-                </View>
-
-
             </ScrollView>
         </>
     );
@@ -483,7 +431,7 @@ export default function Details() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: "#111827",
     },
     contentContainer: {
         padding: 16,
@@ -493,19 +441,18 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: COLORS.background,
+        backgroundColor: "#111827",
     },
     loadingText: {
-        marginTop: 16,
+        marginTop: 12,
         fontSize: 16,
-        color: COLORS.purpleLight,
-        fontWeight: "500",
+        color: "#9CA3AF",
     },
     errorContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: COLORS.background,
+        backgroundColor: "#111827",
         padding: 20,
     },
     errorEmoji: {
@@ -514,370 +461,373 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 18,
-        color: COLORS.pink,
+        color: "#EF4444",
         textAlign: "center",
     },
     headerCard: {
         alignItems: "center",
-        marginBottom: 28,
-        paddingTop: 8,
+        marginBottom: 24,
     },
     pokemonId: {
-        fontSize: 16,
+        fontSize: 18,
+        color: "#6366F1",
         fontWeight: "600",
-        color: COLORS.textMuted,
         marginBottom: 4,
     },
     pokemonName: {
-        fontSize: 34,
+        fontSize: 32,
         fontWeight: "bold",
-        color: COLORS.textPrimary,
+        color: "#F9FAFB",
         textTransform: "capitalize",
-        letterSpacing: 1.5,
+        letterSpacing: 1,
     },
-    dividerContainer: {
-        flexDirection: "row",
-        gap: 6,
-        marginTop: 14,
+    defaultBadge: {
+        marginTop: 8,
+        fontSize: 12,
+        color: "#10B981",
+        backgroundColor: "rgba(16, 185, 129, 0.2)",
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
-    dividerSegment: {
-        width: 24,
+    divider: {
+        width: 60,
         height: 4,
+        backgroundColor: "#6366F1",
         borderRadius: 2,
+        marginTop: 12,
     },
     section: {
-        marginBottom: 28,
-    },
-    sectionHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    sectionIcon: {
-        fontSize: 22,
-        marginRight: 10,
+        marginBottom: 24,
     },
     sectionTitle: {
         fontSize: 20,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
+        fontWeight: "600",
+        color: "#F9FAFB",
+        marginBottom: 16,
     },
     subSectionTitle: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: COLORS.textMuted,
+        fontSize: 14,
+        fontWeight: "500",
+        color: "#9CA3AF",
         marginBottom: 12,
         marginTop: 8,
-        textTransform: "uppercase",
-        letterSpacing: 1,
     },
-    // Types
-    typesRow: {
+    typesContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 10,
+        gap: 8,
     },
     typeChip: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
         borderRadius: 20,
     },
     typeText: {
-        color: "#FFFFFF",
-        fontWeight: "700",
+        color: "#FFF",
+        fontWeight: "600",
         fontSize: 14,
-        textShadowColor: "rgba(0,0,0,0.3)",
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
+        textTransform: "capitalize",
     },
-    // Sprites
+    artworkContainer: {
+        alignItems: "center",
+        backgroundColor: "#1F2937",
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: "#374151",
+    },
+    artworkImage: {
+        width: 200,
+        height: 200,
+    },
     spriteRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "space-around",
         gap: 12,
     },
     spriteCard: {
         flex: 1,
-        borderRadius: 20,
+        backgroundColor: "#1F2937",
+        borderRadius: 16,
         padding: 16,
         alignItems: "center",
-        borderWidth: 1.5,
-    },
-    normalCard: {
-        backgroundColor: COLORS.cardBg,
-        borderColor: COLORS.blue + "40",
+        borderWidth: 1,
+        borderColor: "#374151",
     },
     shinyCard: {
-        backgroundColor: "rgba(236, 72, 153, 0.08)",
-        borderColor: COLORS.pink + "50",
+        borderColor: "#FBBF24",
+        backgroundColor: "rgba(251, 191, 36, 0.1)",
     },
     spriteImage: {
         width: 100,
         height: 100,
     },
     spriteLabel: {
-        marginTop: 10,
-        fontSize: 13,
-        color: COLORS.textSecondary,
-        fontWeight: "600",
+        marginTop: 8,
+        fontSize: 14,
+        color: "#9CA3AF",
+        fontWeight: "500",
     },
-    // Info Grid
     infoGrid: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        flexWrap: "wrap",
         gap: 12,
-        marginBottom: 12,
     },
     infoCard: {
         flex: 1,
-        borderRadius: 20,
-        padding: 20,
+        minWidth: "45%",
+        backgroundColor: "#1F2937",
+        borderRadius: 16,
+        padding: 16,
         alignItems: "center",
-        borderWidth: 1.5,
-    },
-    weightCard: {
-        backgroundColor: "rgba(59, 130, 246, 0.08)",
-        borderColor: COLORS.blue + "40",
-    },
-    heightCard: {
-        backgroundColor: "rgba(168, 85, 247, 0.08)",
-        borderColor: COLORS.purple + "40",
-    },
-    expCard: {
-        backgroundColor: "rgba(232, 168, 122, 0.15)",
-        borderColor: COLORS.orange + "40",
-    },
-    orderCard: {
-        backgroundColor: "rgba(143, 192, 168, 0.15)",
-        borderColor: COLORS.mint + "40",
+        borderWidth: 1,
+        borderColor: "#374151",
     },
     infoIcon: {
-        fontSize: 32,
-        marginBottom: 10,
+        fontSize: 24,
+        marginBottom: 8,
     },
     infoValue: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: "bold",
+        color: "#F9FAFB",
     },
     infoLabel: {
-        marginTop: 6,
-        fontSize: 13,
-        color: COLORS.textMuted,
-        fontWeight: "500",
-    },
-    defaultInfoRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: 8,
-        gap: 12,
-    },
-    defaultLabel: {
-        fontSize: 15,
-        color: COLORS.textSecondary,
-        fontWeight: "500",
-    },
-    defaultBadge: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 12,
-    },
-    yesDefault: {
-        backgroundColor: COLORS.mint + "30",
-    },
-    noDefault: {
-        backgroundColor: COLORS.pink + "30",
-    },
-    defaultBadgeText: {
-        fontSize: 13,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    // Stats
-    statsContainer: {
-        backgroundColor: COLORS.cardBg,
-        borderRadius: 20,
-        padding: 20,
-        borderWidth: 1.5,
-        borderColor: COLORS.cardBorder,
+        marginTop: 4,
+        fontSize: 12,
+        color: "#9CA3AF",
     },
     statRow: {
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 12,
+        backgroundColor: "#1F2937",
+        padding: 12,
+        borderRadius: 12,
     },
     statName: {
-        width: 70,
-        fontSize: 13,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
+        width: 120,
+        fontSize: 14,
+        color: "#9CA3AF",
+        textTransform: "capitalize",
     },
     statValue: {
         width: 40,
         fontSize: 14,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
+        fontWeight: "bold",
+        color: "#F9FAFB",
         textAlign: "right",
         marginRight: 12,
     },
     statBarContainer: {
         flex: 1,
-        height: 10,
-        backgroundColor: COLORS.cream,
-        borderRadius: 5,
+        height: 8,
+        backgroundColor: "#374151",
+        borderRadius: 4,
         overflow: "hidden",
     },
     statBar: {
         height: "100%",
-        borderRadius: 5,
+        borderRadius: 4,
     },
-    totalStatRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.cardBorder,
-    },
-    totalStatLabel: {
-        fontSize: 14,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    totalStatValue: {
-        fontSize: 16,
-        fontWeight: "800",
-        color: COLORS.purple,
-    },
-    // Abilities
     abilitiesContainer: {
-        gap: 10,
+        gap: 12,
     },
     abilityChip: {
-        borderRadius: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 18,
+        backgroundColor: "#1F2937",
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        borderWidth: 1.5,
-    },
-    normalAbilityChip: {
-        backgroundColor: COLORS.cardBg,
-        borderColor: COLORS.blue + "30",
+        borderWidth: 1,
+        borderColor: "#374151",
     },
     hiddenAbilityChip: {
-        backgroundColor: "rgba(236, 72, 153, 0.08)",
-        borderColor: COLORS.pink + "40",
-    },
-    abilityInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    abilityDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 12,
+        borderColor: "#8B5CF6",
+        backgroundColor: "rgba(139, 92, 246, 0.1)",
     },
     abilityText: {
         fontSize: 16,
-        color: COLORS.textPrimary,
-        fontWeight: "600",
+        color: "#F9FAFB",
+        fontWeight: "500",
+    },
+    abilitySlot: {
+        fontSize: 12,
+        color: "#6B7280",
+        marginTop: 2,
     },
     hiddenAbilityText: {
-        color: COLORS.pinkDark,
+        color: "#C4B5FD",
     },
     hiddenBadge: {
-        backgroundColor: COLORS.pink + "20",
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: 10,
-    },
-    hiddenBadgeText: {
-        fontSize: 11,
-        color: COLORS.pinkDark,
-        fontWeight: "700",
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-    },
-    // Past Abilities & Types
-    pastContainer: {
-        marginBottom: 16,
-        padding: 16,
-        backgroundColor: COLORS.cream,
-        borderRadius: 16,
-    },
-    generationTitle: {
-        fontSize: 14,
+        fontSize: 12,
+        color: "#8B5CF6",
+        backgroundColor: "rgba(139, 92, 246, 0.2)",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+        overflow: "hidden",
         fontWeight: "600",
-        color: COLORS.textSecondary,
-        marginBottom: 12,
     },
-    // Species
+    pastAbilityCard: {
+        backgroundColor: "#1F2937",
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#374151",
+    },
+    generationText: {
+        fontSize: 14,
+        color: "#6366F1",
+        fontWeight: "600",
+        marginBottom: 8,
+    },
+    pastAbilityText: {
+        fontSize: 14,
+        color: "#9CA3AF",
+    },
     speciesCard: {
-        backgroundColor: COLORS.cardBg,
-        borderRadius: 16,
-        padding: 20,
-        alignItems: "center",
-        borderWidth: 1.5,
-        borderColor: COLORS.mint + "40",
+        backgroundColor: "#1F2937",
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#374151",
     },
     speciesName: {
         fontSize: 18,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
+        color: "#F9FAFB",
+        fontWeight: "500",
+        textTransform: "capitalize",
     },
-    // Held Items
-    heldItemsContainer: {
+    criesContainer: {
         gap: 12,
     },
-    heldItemCard: {
-        backgroundColor: COLORS.cardBg,
-        borderRadius: 16,
+    cryButton: {
+        backgroundColor: "#6366F1",
+        borderRadius: 12,
         padding: 16,
-        borderWidth: 1.5,
-        borderColor: COLORS.peach + "40",
+        alignItems: "center",
     },
-    heldItemName: {
+    legacyCryButton: {
+        backgroundColor: "#4B5563",
+    },
+    cryButtonText: {
         fontSize: 16,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginBottom: 10,
+        color: "#FFF",
+        fontWeight: "600",
     },
-    versionDetailsContainer: {
+    formsContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
         gap: 8,
     },
-    versionDetailChip: {
+    formChip: {
+        backgroundColor: "#1F2937",
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderWidth: 1,
+        borderColor: "#374151",
+    },
+    formText: {
+        fontSize: 14,
+        color: "#F9FAFB",
+    },
+    heldItemCard: {
+        backgroundColor: "#1F2937",
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#374151",
+    },
+    heldItemName: {
+        fontSize: 16,
+        color: "#F9FAFB",
+        fontWeight: "500",
+        textTransform: "capitalize",
+    },
+    heldItemRarity: {
+        fontSize: 12,
+        color: "#6B7280",
+        marginTop: 4,
+    },
+    collapsibleHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    expandIcon: {
+        fontSize: 16,
+        color: "#6366F1",
+    },
+    movesContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginTop: 8,
+    },
+    moveChip: {
+        backgroundColor: "#1F2937",
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: "#374151",
+    },
+    moveText: {
+        fontSize: 12,
+        color: "#F9FAFB",
+        textTransform: "capitalize",
+    },
+    gameIndicesContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginTop: 8,
+    },
+    gameIndexCard: {
+        backgroundColor: "#1F2937",
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: "#374151",
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: COLORS.cream,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        gap: 8,
+    },
+    gameIndexVersion: {
+        fontSize: 12,
+        color: "#F9FAFB",
+        textTransform: "capitalize",
+    },
+    gameIndexNumber: {
+        fontSize: 12,
+        color: "#6366F1",
+        fontWeight: "600",
+    },
+    pastTypeCard: {
+        backgroundColor: "#1F2937",
         borderRadius: 12,
-        gap: 6,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#374151",
     },
-    versionName: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        fontWeight: "500",
-    },
-    rarityText: {
-        fontSize: 12,
-        color: COLORS.purple,
-        fontWeight: "700",
-    },
-    emptyCard: {
-        backgroundColor: COLORS.cream,
-        borderRadius: 16,
-        padding: 24,
+    locationButton: {
+        backgroundColor: "#10B981",
+        borderRadius: 12,
+        padding: 16,
         alignItems: "center",
     },
-    emptyText: {
-        fontSize: 15,
-        color: COLORS.textMuted,
-        fontWeight: "500",
+    locationButtonText: {
+        fontSize: 16,
+        color: "#FFF",
+        fontWeight: "600",
     },
 });
