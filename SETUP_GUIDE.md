@@ -9,20 +9,20 @@
 ```
 
 ## 2. Dependencies
-- [ ] Run `cd my-app && npm install`
+- [ ] Run `cd pokemon-app && npm install`
 - [ ] Run `cd StickerSmash && npm install`
 
 ## 3. Projects in this Repository
 | Project | Type | Description |
 |---------|------|-------------|
-| `my-app/` | Expo (React Native) | Main mobile application |
+| `pokemon-app/` | Expo (React Native) | Main mobile application |
 | `StickerSmash/` | Expo (React Native) | Sticker application tutorial |
 | `JSON/` | HTML | JSON utility files |
 
 ## 4. Running the Apps
 ```bash
-# สำหรับ my-app
-cd my-app
+# สำหรับ pokemon-app
+cd pokemon-app
 npx expo start
 
 # สำหรับ StickerSmash

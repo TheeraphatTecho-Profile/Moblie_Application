@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "striker_smash-app",
+    "slug": "striker_smash-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "strikersmashapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
