@@ -1,27 +1,29 @@
-# 📱 Mobile Application Project
+# 📱 my-app - Pokédex Application
 
-โปรเจกต์นี้ประกอบด้วย 3 ส่วนหลัก คือ **my-app** (แอปพลิเคชัน Pokédex), **Coffee_Project** (แอปพลิเคชันจัดการสวนกาแฟ) และ **JSON** (ตัวอย่างการใช้งาน JSON)
+แอปพลิเคชัน **Pokédex** สร้างด้วย **React Native** และ **Expo** สำหรับแสดงข้อมูล Pokemon โดยดึงข้อมูลจาก [PokéAPI](https://pokeapi.co/)
 
 ---
 
 ## 📁 โครงสร้างโปรเจกต์
 
-```markdown
-Mobile-Application/
-├── README.md              # ไฟล์เอกสารอธิบายโปรเจกต์
-├── my-app/                # แอปพลิเคชัน React Native (Expo) - Pokédex
-├── Coffee_Project/        # แอปพลิเคชันจัดการสวนกาแฟ (Coffee Farm App)
-└── JSON/                  # โฟลเดอร์สำหรับฝึก JSON
+```
+my-app/
+├── app/                   # โฟลเดอร์หลักสำหรับหน้าแอป
+│   ├── _layout.tsx        # ไฟล์กำหนด Layout และ Navigation
+│   ├── index.tsx          # หน้าแรก แสดงรายการ Pokemon
+│   └── details.tsx        # หน้ารายละเอียด Pokemon
+├── assets/                # ไฟล์รูปภาพและ icon ต่างๆ
+│   └── images/            # รูปภาพ icon, splash screen
+├── app.json               # การตั้งค่า Expo
+├── package.json           # รายการ dependencies
+├── tsconfig.json          # การตั้งค่า TypeScript
+└── eslint.config.js       # การตั้งค่า ESLint
 ```
 
 ---
 
-## 🎮 my-app - Pokédex Application
+## 🛠️ เทคโนโลยีที่ใช้
 
-### รายละเอียด
-แอปพลิเคชัน **Pokédex** สร้างด้วย **React Native** และ **Expo** สำหรับแสดงข้อมูล Pokemon โดยดึงข้อมูลจาก [PokéAPI](https://pokeapi.co/)
-
-### เทคโนโลยีที่ใช้
 | เทคโนโลยี | เวอร์ชัน | คำอธิบาย |
 |-----------|---------|----------|
 | Expo | ~54.0.29 | Framework สำหรับพัฒนา React Native |
@@ -30,87 +32,184 @@ Mobile-Application/
 | TypeScript | ~5.9.2 | ภาษา JavaScript ที่มี Type Safety |
 | expo-router | ~6.0.19 | ระบบ Navigation แบบ File-based |
 
-### โครงสร้างไฟล์ในโฟลเดอร์ `app/`
+---
 
-#### 1. `_layout.tsx` - Root Layout
+## 📄 รายละเอียดไฟล์ในโฟลเดอร์ `app/`
+
+### 1. `_layout.tsx` - Root Layout
+
+กำหนดโครงสร้าง Navigation ของแอป
+
 ```typescript
-// กำหนดโครงสร้าง Navigation ของแอป
-- ใช้ Stack Navigator
-- กำหนดหน้า index (Home) และ details
-- details ใช้ presentation: "formSheet" แสดงเป็น Modal Sheet
+import { Stack } from "expo-router";
+
+export default function RootLayout() {
+  return <Stack>
+    <Stack.Screen name="index" options={{ title: "Home" }} />
+    <Stack.Screen name="details" options={{
+      title: "Details",
+      presentation: "formSheet",        // แสดงเป็น Modal Sheet
+      sheetAllowedDetents: [0.3, 0.5, 0.7],
+      sheetGrabberVisible: true
+    }} />
+  </Stack>;
+}
 ```
 
-#### 2. `index.tsx` - หน้าแรก (Home)
+**การทำงาน:**
+- ใช้ **Stack Navigator** สำหรับการนำทางระหว่างหน้า
+- หน้า `index` = หน้าแรก (Home)
+- หน้า `details` = แสดงเป็น Modal Sheet สามารถลากปรับขนาดได้
+
+---
+
+### 2. `index.tsx` - หน้าแรก (Home)
+
+หน้าหลักแสดงรายการ Pokemon ทั้งหมด
+
+#### Interface ที่ใช้:
 ```typescript
-// หน้าหลักแสดงรายการ Pokemon
+// ข้อมูล Pokemon แต่ละตัว
+interface Pokemon {
+  name: string;       // ชื่อ Pokemon
+  image: string;      // รูปด้านหน้า
+  imageBack: string;  // รูปด้านหลัง
+  type: PokemonType[]; // ประเภท Pokemon
+}
 
-Interface ที่ใช้:
-├── Pokemon           # ข้อมูล Pokemon แต่ละตัว
-│   ├── name         # ชื่อ Pokemon
-│   ├── image        # รูปด้านหน้า
-│   ├── imageBack    # รูปด้านหลัง
-│   └── type         # ประเภท Pokemon
-└── PokemonType       # ข้อมูลประเภท
-    └── type.name    # ชื่อประเภท
+// ข้อมูลประเภท Pokemon
+interface PokemonType {
+  type: {
+    name: string;     // ชื่อประเภท เช่น fire, water
+    url: string;
+  };
+}
+```
 
-ฟังก์ชันหลัก:
-├── fetchPokemons()   # ดึงข้อมูล Pokemon 20 ตัวแรกจาก API
-└── formatName()      # แปลงชื่อให้ตัวแรกเป็นตัวใหญ่
+#### ฟังก์ชันหลัก:
+| ฟังก์ชัน | คำอธิบาย |
+|----------|----------|
+| `fetchPokemons()` | ดึงข้อมูล Pokemon 20 ตัวแรกจาก API |
+| `formatName()` | แปลงชื่อให้ตัวแรกเป็นตัวใหญ่ |
 
-การทำงาน:
-1. โหลด Component → เรียก fetchPokemons()
+#### การทำงาน:
+1. โหลด Component → เรียก `fetchPokemons()`
 2. ดึงรายการ Pokemon จาก API
 3. แสดง Loading ระหว่างรอข้อมูล
 4. แสดงรายการ Pokemon ในรูปแบบ Card
 5. กดที่ Card → ไปหน้า Details
-```
 
-#### 3. `details.tsx` - หน้ารายละเอียด
-```typescript
-// หน้าแสดงรายละเอียด Pokemon แบบเต็มรูปแบบ
-
-Interface PokemonData:
-├── id               # รหัส Pokemon
-├── name             # ชื่อ
-├── weight           # น้ำหนัก
-├── height           # ส่วนสูง
-├── base_experience  # ค่าประสบการณ์พื้นฐาน
-├── is_default       # เป็น Form หลักหรือไม่
-├── abilities[]      # ความสามารถ
-├── sprites          # รูปภาพต่างๆ
-│   ├── front_default  # รูปปกติด้านหน้า
-│   ├── back_default   # รูปปกติด้านหลัง
-│   ├── front_shiny    # รูป Shiny ด้านหน้า
-│   └── back_shiny     # รูป Shiny ด้านหลัง
-├── stats[]          # ค่าสถานะพื้นฐาน
-├── types[]          # ประเภท
-├── past_types[]     # ประเภทในอดีต
-├── held_items[]     # ไอเทมที่ถือ
-└── species          # สายพันธุ์
-
-ส่วนแสดงผล:
-├── 🏷️ Types        # แสดงประเภท Pokemon
-├── 🎨 Sprites      # แสดงรูปภาพ (ปกติ/Shiny)
-├── 📋 Basic Info   # ข้อมูลพื้นฐาน (น้ำหนัก, ส่วนสูง, Exp)
-├── 📈 Base Stats   # ค่าสถานะ (HP, Attack, Defense, ฯลฯ)
-├── ⚡ Abilities    # ความสามารถ
-├── 🕰️ Past Types   # ประเภทในอดีต (ถ้ามี)
-└── 🧬 Species      # สายพันธุ์
-```
-
-### ธีมสี
-แอปใช้ธีม **Soft Pastel** สีนุ่มนวล สบายตา:
+#### สีตามประเภท Pokemon:
 ```javascript
-COLORS = {
-  background: "#FAF7F5"    // Warm Cream (พื้นหลัง)
-  purple: "#9A8BB0"        // Soft Lavender
-  blue: "#7BA3BD"          // Dusty Blue
-  pink: "#C08888"          // Dusty Rose
-  textPrimary: "#2D2836"   // Dark Purple Grey (ข้อความหลัก)
+const colorsByType = {
+  normal: "#A8A77A",   fire: "#EE8130",
+  water: "#6390F0",    electric: "#F7D02C",
+  grass: "#7AC74C",    ice: "#96D9D6",
+  fighting: "#C22E28", poison: "#A33EA1",
+  ground: "#E2BF65",   flying: "#A98FF3",
+  psychic: "#F95587",  bug: "#A6B91A",
+  rock: "#B6A136",     ghost: "#735797",
+  dragon: "#6F35FC",   dark: "#705746",
+  steel: "#B7B7CE",    fairy: "#D685AD",
+};
+```
+
+---
+
+### 3. `details.tsx` - หน้ารายละเอียด
+
+หน้าแสดงรายละเอียด Pokemon แบบเต็มรูปแบบ
+
+#### Interface PokemonData:
+```typescript
+interface PokemonData {
+  id: number;              // รหัส Pokemon
+  name: string;            // ชื่อ
+  weight: number;          // น้ำหนัก (หน่วย: 0.1 kg)
+  height: number;          // ส่วนสูง (หน่วย: 0.1 m)
+  base_experience: number; // ค่าประสบการณ์พื้นฐาน
+  is_default: boolean;     // เป็น Form หลักหรือไม่
+  abilities: Ability[];    // ความสามารถ
+  sprites: Sprites;        // รูปภาพต่างๆ
+  stats: Stat[];           // ค่าสถานะพื้นฐาน
+  types: Type[];           // ประเภท
+  past_types: PastType[];  // ประเภทในอดีต
+  held_items: HeldItem[];  // ไอเทมที่ถือ
+  species: Species;        // สายพันธุ์
 }
 ```
 
-### วิธีการรันแอป
+#### ส่วนแสดงผล:
+| Section | Emoji | คำอธิบาย |
+|---------|-------|----------|
+| Types | 🏷️ | แสดงประเภท Pokemon |
+| Sprites | 🎨 | แสดงรูปภาพ (ปกติ/Shiny) |
+| Basic Info | 📋 | น้ำหนัก, ส่วนสูง, Base Exp, Order |
+| Base Stats | 📈 | HP, Attack, Defense, Sp.Atk, Sp.Def, Speed |
+| Abilities | ⚡ | ความสามารถ (รวม Hidden Ability) |
+| Past Types | 🕰️ | ประเภทในอดีต (ถ้ามี) |
+| Species | 🧬 | สายพันธุ์ |
+
+---
+
+## 🎨 ธีมสี
+
+แอปใช้ธีม **Soft Pastel** สีนุ่มนวล สบายตา:
+
+```javascript
+const COLORS = {
+  // พื้นหลัง
+  background: "#FAF7F5",    // Warm Cream
+  cardBg: "#FFFFFF",
+  cardBorder: "#E8D5D5",    // Dusty Rose Border
+
+  // สีหลัก
+  purple: "#9A8BB0",        // Soft Lavender
+  blue: "#7BA3BD",          // Dusty Blue
+  pink: "#C08888",          // Dusty Rose
+
+  // ข้อความ
+  textPrimary: "#2D2836",   // Dark Purple Grey
+  textSecondary: "#4A4453", // Medium Grey
+  textMuted: "#6B6374",     // Muted Grey
+};
+```
+
+---
+
+## 🔗 API Reference
+
+แอปใช้ข้อมูลจาก **PokéAPI** (https://pokeapi.co/)
+
+| Endpoint | คำอธิบาย |
+|----------|----------|
+| `GET /api/v2/pokemon/?limit=20` | ดึงรายการ Pokemon 20 ตัวแรก |
+| `GET /api/v2/pokemon/{name}` | ดึงข้อมูลรายละเอียด Pokemon |
+
+### ตัวอย่าง Response:
+```json
+{
+  "id": 25,
+  "name": "pikachu",
+  "height": 4,
+  "weight": 60,
+  "types": [
+    {
+      "slot": 1,
+      "type": { "name": "electric" }
+    }
+  ],
+  "stats": [
+    { "base_stat": 35, "stat": { "name": "hp" } },
+    { "base_stat": 55, "stat": { "name": "attack" } }
+  ]
+}
+```
+
+---
+
+## 🚀 วิธีการรันแอป
+
 ```bash
 # ติดตั้ง dependencies
 cd my-app
@@ -128,118 +227,6 @@ npx expo start --tunnel
 npx expo start --android
 npx expo start --ios
 npx expo start --web
-```
-
----
-
-## ☕ Coffee_Project - Coffee Farm Application
-
-### รายละเอียด
-
-แอปพลิเคชัน **สวนกาแฟเลย** สำหรับบริหารจัดการสวนกาแฟ ติดตามการเก็บเกี่ยว และวิเคราะห์ข้อมูลผลผลิต พัฒนาด้วย **React Native** และ **Firebase**
-
-### เทคโนโลยีที่ใช้
-
-| เทคโนโลยี | เวอร์ชัน | คำอธิบาย |
-|-----------|---------|----------|
-| Expo | ~55.0.8 | Framework สำหรับพัฒนา React Native |
-| React Native | 0.83.2 | Core framework |
-| Firebase | ^23.8.8 | ระบบ Backend (Auth, Firestore) |
-| TypeScript | ~5.9.2 | ภาษาที่มี Type Safety |
-| react-native-chart-kit | ^6.12.0 | แสดงกราฟวิเคราะห์ข้อมูล |
-
-### ฟีเจอร์หลัก
-
-- 🚜 **Farm Management**: จัดการข้อมูลแปลงกาแฟ
-- 🧺 **Harvest Tracking**: บันทึกข้อมูลการเก็บเกี่ยว
-- 📊 **Analytics**: กราฟวิเคราะห์ผลผลิตและราคา
-- 🔔 **Notifications**: ระบบแจ้งเตือนการดูแลสวน
-- 🌐 **Offline Support**: รองรับการใช้งานแบบออฟไลน์
-- 📂 **Export CSV**: ส่งออกข้อมูลเป็นไฟล์ CSV
-- 🇹🇭 **Multi-language**: รองรับภาษาไทย, อังกฤษ และจีน
-
----
-
-## 📄 JSON - โฟลเดอร์ฝึกฝน JSON
-
-### รายละเอียด
-โฟลเดอร์สำหรับฝึกฝนการใช้งาน **JSON** (JavaScript Object Notation)
-
-### โครงสร้าง
-```
-JSON/
-└── json1.html    # ไฟล์ HTML พื้นฐานสำหรับทดสอบ JavaScript และ JSON
-```
-
-### json1.html
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON</title>
-</head>
-<body>
-    <script>
-        // พื้นที่สำหรับเขียน JavaScript ทดสอบ JSON
-    </script>
-</body>
-</html>
-```
-
-### ตัวอย่างการใช้งาน JSON
-```javascript
-// สร้าง Object
-const pokemon = {
-    name: "Pikachu",
-    type: "Electric",
-    level: 25
-};
-
-// แปลง Object เป็น JSON String
-const jsonString = JSON.stringify(pokemon);
-// ผลลัพธ์: '{"name":"Pikachu","type":"Electric","level":25}'
-
-// แปลง JSON String เป็น Object
-const parsedObject = JSON.parse(jsonString);
-// ผลลัพธ์: { name: "Pikachu", type: "Electric", level: 25 }
-```
-
----
-
-## 🔗 API Reference
-
-แอปใช้ข้อมูลจาก **PokéAPI** (https://pokeapi.co/)
-
-| Endpoint | คำอธิบาย |
-|----------|----------|
-| `/api/v2/pokemon/?limit=20` | ดึงรายการ Pokemon 20 ตัวแรก |
-| `/api/v2/pokemon/{name}` | ดึงข้อมูลรายละเอียด Pokemon |
-
-### ตัวอย่าง Response (Ditto)
-```json
-{
-    "id": 132,
-    "name": "ditto",
-    "height": 3,
-    "weight": 40,
-    "types": [
-        {
-            "slot": 1,
-            "type": {
-                "name": "normal",
-                "url": "https://pokeapi.co/api/v2/type/1/"
-            }
-        }
-    ],
-    "stats": [
-        {
-            "base_stat": 48,
-            "stat": { "name": "hp" }
-        }
-    ]
-}
 ```
 
 ---
